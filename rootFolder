@@ -1,0 +1,81 @@
+import java.io.*;
+import java.util.*;
+
+public class RootFolder {
+    public static void main(String[] args) throws Exception {
+        System.out.println("Введите полный путь к папке");
+        BufferedReader r=new BufferedReader(new InputStreamReader(System.in));
+
+        String fileName=r.readLine(); // Здесь с консоли считывается полное имя папки и сохраняется в переменную fileName
+        r.close(); // Закрываем поток чтения с консоли
+
+        File resultFile = new File("D://result File.txt"); // Результатом программы является текстовый файл D://result File.txt, который будет заполнен данными согласно условию задачи
+
+
+        try (FileOutputStream fos = new FileOutputStream(resultFile)) { // Открываем поток записи данных в файл resultFile
+
+
+            File rootDir = new File(fileName);
+            List<File> result = new ArrayList<>(); //В этой переменной будут храниться все текстовые файлы, которые присутствуют в корневой папке, а также во внутренних папках различной глубины
+            Queue<File> fileTree = new PriorityQueue<>(); // В очереди будут храниться все файлы и папки
+
+            /*
+      Суть алгоритма заключается в следующем.
+      Сначала кладем все файлы и папки, содержащиеся в корневой папке, в очередь.
+      Затем вытаскиваем верхний элемент из очереди, проверяем, если этот элемент является папкой, то разбиваем его на отдельные элементы и кладем обратно в очередь.
+      Если элемент не является папкой и является текстовым файлом, то кладем его в список.
+      Алгоритм будет работать до тех пор, пока не закончатся элементы в очереди.
+             */
+            Collections.addAll(fileTree, rootDir.listFiles());
+
+            while (!fileTree.isEmpty()) {
+                File currentFile = fileTree.remove();
+                if (currentFile.isDirectory()) {
+                    Collections.addAll(fileTree, currentFile.listFiles());
+                } else {
+                    if (currentFile.getCanonicalPath().endsWith(".txt")) {// Благодаря этому условию в список result добавляются только текстовые файлы
+                        result.add(currentFile);
+                    }
+
+
+                }
+            }
+
+            Collections.sort(result, new Comparator<File>() { // В списке result элементы сортируются по имени файлов
+                @Override
+                public int compare(File file1, File file2) {
+                    String s1 = null, s2 = null;
+
+                    try {
+                        s1 = file1.getCanonicalPath();
+                        s2 = file2.getCanonicalPath();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                    return s1.compareTo(s2);
+                }
+            });
+
+            FileInputStream fis = null;
+
+            byte[] buffer = null;
+
+            for (int i = 0; i < result.size(); i++) {// Здесь данные из списка result записываются в файл D://result File.txt
+                fis = new FileInputStream(result.get(i));
+                buffer = new byte[fis.available()];
+                fis.read(buffer, 0, fis.available());
+
+                fos.write(buffer, 0, buffer.length);
+                fis.close();
+            }
+            fos.flush();
+
+            fos.close(); //Закрываем поток записи данных в файл
+            System.out.println("Программа успешно завершила свою работу. Откройте файл D://result File.txt для просмотра результата");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        }
+}
